@@ -264,6 +264,16 @@ const Modal = () => {
     api.navigation.dismiss();
   };
 
+  // Validate prescription step and continue
+  const handlePrescriptionContinue = () => {
+    const pdValid = pdType === 'single' ? pupillaryDistance : (rightPD && leftPD);
+    if (!rightEyeData.sph || !leftEyeData.sph || !pdValid) {
+      api.toast.show('Please fill in all required fields', { type: 'error' });
+      return;
+    }
+    api.navigation.navigate('LensOptions');
+  };
+
   return (
     <Navigator>
       <Screen name="PrescriptionForm" title="Prescription Details">
@@ -427,31 +437,61 @@ const Modal = () => {
             )}
           </Section>
 
+
+
+
+
+
+
+
+
+          {/* Submit and Continue Buttons */}
+          <Section title="Prescription">
+            <Button 
+              title="Submit and Continue" 
+              type="primary" 
+              onPress={handlePrescriptionContinue}
+              disabled={saving}
+            />
+            <Text></Text>
+            <Button 
+              title="Cancel" 
+              type="destructive" 
+              onPress={handleCancel}
+              disabled={saving}
+            />
+          </Section>
+        </ScrollView>
+      </Screen>
+
+      {/* Lens Options Screen */}
+      <Screen name="LensOptions" title="Lens Options">
+        <ScrollView>
           {/* Lens Type Section */}
           <Section title="Lens Type">
             <Button
-              title={`Clear${formatPrice(235)}`}
+              title={`Clear (+$235.00)`}
               type={getButtonType(lensType, 'Clear')}
               onPress={() => setLensType('Clear')}
               disabled={saving}
             />
             <Text></Text>
             <Button
-              title={`Blue-Violet Light Filter${formatPrice(275)}`}
+              title={`Blue-Violet Light Filter (+$275.00)`}
               type={getButtonType(lensType, 'Blue-Violet Light Filter')}
               onPress={() => setLensType('Blue-Violet Light Filter')}
               disabled={saving}
             />
             <Text></Text>
             <Button
-              title={`Sun${formatPrice(235)}`}
+              title={`Sun (+$235.00)`}
               type={getButtonType(lensType, 'Sun')}
               onPress={() => setLensType('Sun')}
               disabled={saving}
             />
             <Text></Text>
             <Button
-              title={`Transitions${formatPrice(335)}`}
+              title={`Transitions (+$335.00)`}
               type={getButtonType(lensType, 'Transitions')}
               onPress={() => setLensType('Transitions')}
               disabled={saving}
@@ -516,37 +556,19 @@ const Modal = () => {
             />
           </Section>
 
-          {/* Price Summary */}
-          <Section title="Price Summary">
-            <List data={[{
-              id: 'price-summary',
-              leftSide: {
-                label: 'Total Price',
-                subtitle: [
-                  { content: 'Base: $299.00', color: 'TextSubdued' },
-                  { content: `Add-ons: $${(calculateTotalPrice() - 299).toFixed(2)}`, color: 'TextSubdued' }
-                ]
-              },
-              rightSide: {
-                label: `$${calculateTotalPrice().toFixed(2)}`,
-                showChevron: false
-              }
-            }]} />
-          </Section>
-
-          {/* Submit and Cancel Buttons */}
-          <Section title={saving ? "Saving prescription..." : "Save Prescription"}>
-            <Button 
-              title={saving ? "Saving..." : `Submit - $${calculateTotalPrice().toFixed(2)}`} 
-              type="primary" 
-              onPress={handleSubmit}
+          {/* Navigation Buttons */}
+          <Section title="Continue">
+            <Button
+              title="Review"
+              type="primary"
+              onPress={() => api.navigation.navigate('ReviewAndAdd')}
               disabled={saving}
             />
             <Text></Text>
-            <Button 
-              title="Cancel" 
-              type="destructive" 
-              onPress={handleCancel}
+            <Button
+              title="Back"
+              type="plain"
+              onPress={() => api.navigation.navigate('PrescriptionForm')}
               disabled={saving}
             />
           </Section>
@@ -625,6 +647,72 @@ const Modal = () => {
         <ScrollView>
           <Section title="Select Left PD">
             <List data={createValueListData(dualPdValues, leftPD, setLeftPD)} />
+          </Section>
+        </ScrollView>
+      </Screen>
+
+      {/* Review and Add Screen */}
+      <Screen name="ReviewAndAdd" title="Review and Add to Bag">
+        <ScrollView>
+          <Section title="Selections">
+            <List data={[
+              { id: 'prescription-type', leftSide: { label: 'Prescription Type', subtitle: [{ content: prescriptionType, color: 'TextSubdued' }] } },
+              { id: 'right-eye', leftSide: { label: 'Right Eye (OD)', subtitle: [
+                { content: `SPH: ${rightEyeData.sph || 'N/A'}`, color: 'TextSubdued' },
+                { content: `CYL: ${rightEyeData.cyl || 'N/A'}`, color: 'TextSubdued' },
+                { content: `ADD: ${rightEyeData.add || 'N/A'}`, color: 'TextSubdued' },
+                { content: `Axis: ${rightEyeData.axis || 'N/A'}`, color: 'TextSubdued' },
+              ] } },
+              { id: 'left-eye', leftSide: { label: 'Left Eye (OS)', subtitle: [
+                { content: `SPH: ${leftEyeData.sph || 'N/A'}`, color: 'TextSubdued' },
+                { content: `CYL: ${leftEyeData.cyl || 'N/A'}`, color: 'TextSubdued' },
+                { content: `ADD: ${leftEyeData.add || 'N/A'}`, color: 'TextSubdued' },
+                { content: `Axis: ${leftEyeData.axis || 'N/A'}`, color: 'TextSubdued' },
+              ] } },
+              { id: 'pd', leftSide: { label: 'Pupillary Distance', subtitle: [
+                ...(pdType === 'single' ? [{ content: `${pupillaryDistance || 'N/A'}mm`, color: 'TextSubdued' }] : [
+                  { content: `Right: ${rightPD || 'N/A'}mm`, color: 'TextSubdued' },
+                  { content: `Left: ${leftPD || 'N/A'}mm`, color: 'TextSubdued' },
+                ])
+              ] } },
+              { id: 'lens-type', leftSide: { label: 'Lens Type', subtitle: [{ content: lensType, color: 'TextSubdued' }] } },
+              { id: 'lens-material', leftSide: { label: 'Lens Material', subtitle: [{ content: lensMaterial, color: 'TextSubdued' }] } },
+              { id: 'lens-treatment', leftSide: { label: 'Lens Treatment', subtitle: [{ content: lensTreatment, color: 'TextSubdued' }] } },
+              { id: 'lens-brand', leftSide: { label: 'Lens Brand', subtitle: [{ content: lensBrand, color: 'TextSubdued' }] } },
+            ]} />
+          </Section>
+
+          <Section title="Price Summary">
+            <List data={[{
+              id: 'price-summary',
+              leftSide: {
+                label: 'Total Price',
+                subtitle: [
+                  { content: 'Base: $299.00', color: 'TextSubdued' },
+                  { content: `Add-ons: $${(calculateTotalPrice() - 299).toFixed(2)}`, color: 'TextSubdued' }
+                ]
+              },
+              rightSide: {
+                label: `$${calculateTotalPrice().toFixed(2)}`,
+                showChevron: false
+              }
+            }]} />
+          </Section>
+
+          <Section title="Actions">
+            <Button 
+              title={saving ? "Adding..." : `Add to Bag - $${calculateTotalPrice().toFixed(2)}`} 
+              type="primary" 
+              onPress={handleSubmit}
+              disabled={saving}
+            />
+            <Text></Text>
+            <Button 
+              title="Back" 
+              type="plain" 
+              onPress={() => api.navigation.navigate('LensOptions')}
+              disabled={saving}
+            />
           </Section>
         </ScrollView>
       </Screen>
